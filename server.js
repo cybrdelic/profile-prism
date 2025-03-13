@@ -67,8 +67,23 @@ app.get('/auth/callback', async (req, res) => {
     // Store the token in the session
     req.session.github_token = access_token;
 
-    // Redirect back to the main app
-    res.redirect('/');
+    // Send HTML with script to store token in sessionStorage and redirect
+    res.send(`
+      <html>
+        <head>
+          <title>Authentication Successful</title>
+          <script>
+            // Store the token in sessionStorage
+            sessionStorage.setItem('github_token', '${access_token}');
+            // Redirect to main app
+            window.location.href = '/';
+          </script>
+        </head>
+        <body>
+          <p>Authentication successful. Redirecting...</p>
+        </body>
+      </html>
+    `);
 
   } catch (error) {
     console.error('Error exchanging code for token:', error.response?.data || error.message);
@@ -102,12 +117,12 @@ app.get('/api/github/user', async (req, res) => {
 // Fetch user's GitHub repositories
 app.get('/api/github/repos', async (req, res) => {
   const token = req.session.github_token;
-
   if (!token) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
 
   try {
+    // Increase per_page to return more repos
     const reposResponse = await axios.get('https://api.github.com/user/repos', {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -116,21 +131,93 @@ app.get('/api/github/repos', async (req, res) => {
       params: {
         sort: 'updated',
         direction: 'desc',
-        per_page: 10 // Limit to most recent 10 repos
+        per_page: 100
       }
     });
 
-    res.json(reposResponse.data);
+    // Filter out archived and private repos
+    const filteredRepos = reposResponse.data.filter(repo => !repo.archived && !repo.private);
+
+    // Fetch README for each repository
+    const reposWithReadmes = await Promise.all(
+      filteredRepos.map(async (repo) => {
+        try {
+          let readmeResponse = await axios.get(`https://api.github.com/repos/${repo.full_name}/contents/README.md`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/json'
+            }
+          });
+
+          if (readmeResponse.status === 200) {
+            const readme = readmeResponse.data;
+            const content = readme.content ? Buffer.from(readme.content, 'base64').toString() : '';
+            return { ...repo, readme: content };
+          }
+        } catch (error) {
+          // If README.md not found, try lowercase readme.md
+          try {
+            const readmeResponse = await axios.get(`https://api.github.com/repos/${repo.full_name}/contents/readme.md`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: 'application/json'
+              }
+            });
+            if (readmeResponse.status === 200) {
+              const readme = readmeResponse.data;
+              const content = readme.content ? Buffer.from(readme.content, 'base64').toString() : '';
+              return { ...repo, readme: content };
+            }
+          } catch (error) {
+            return { ...repo, readme: "No README available" };
+          }
+        }
+        // Fallback if no README is found
+        return { ...repo, readme: "No README available" };
+      })
+    );
+
+    res.json(reposWithReadmes);
   } catch (error) {
     console.error('Error fetching GitHub repositories:', error.response?.data || error.message);
     res.status(500).json({ error: 'Failed to fetch repositories' });
   }
 });
 
+
+// API endpoint to get the user's GitHub token (client side needs this for README fetching)
+app.get('/api/github/token', (req, res) => {
+  const token = req.session.github_token;
+
+  if (!token) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  // Return minimal token info for client-side use
+  res.json({ token: token });
+});
+
 // Logout endpoint
 app.get('/auth/logout', (req, res) => {
   req.session.destroy();
-  res.redirect('/');
+
+  // Send HTML with script to remove token from sessionStorage and redirect
+  res.send(`
+    <html>
+      <head>
+        <title>Logout Successful</title>
+        <script>
+          // Remove token from sessionStorage
+          sessionStorage.removeItem('github_token');
+          // Redirect to main app
+          window.location.href = '/';
+        </script>
+      </head>
+      <body>
+        <p>Logout successful. Redirecting...</p>
+      </body>
+    </html>
+  `);
 });
 
 // Start the server

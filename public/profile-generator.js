@@ -4,6 +4,7 @@ class ProfileGenerator {
         this.githubData = null;
         this.resumeData = null;
         this.profileData = null;
+        this.sourceContext = null; // Store the source context that went into generation
     }
 
     // Fetch GitHub repositories for the authenticated user
@@ -15,13 +16,20 @@ class ProfileGenerator {
                 throw new Error('User not authenticated');
             }
 
+            // Fetch user data
+            const userData = await userResponse.json();
+
             // Fetch repositories
             const reposResponse = await fetch('/api/github/repos');
             if (!reposResponse.ok) {
                 throw new Error('Failed to fetch repositories');
             }
 
-            this.githubData = await reposResponse.json();
+            this.githubData = {
+                user: userData,
+                repos: await reposResponse.json()
+            };
+
             return this.githubData;
         } catch (error) {
             console.error('Error fetching GitHub data:', error);
@@ -48,7 +56,8 @@ class ProfileGenerator {
 
         try {
             // Prepare the prompt with GitHub and resume data
-            const topRepos = this.githubData.slice(0, 5); // Limit to top 5 repos
+            const topRepos = this.githubData.repos.slice(0, 5); // Limit to top 5 repos
+            const userData = this.githubData.user;
 
             // Get text from all resume artifacts
             const resumeTexts = await Promise.all(
@@ -64,9 +73,19 @@ class ProfileGenerator {
 
             const combinedResumeText = resumeTexts.join('\n\n');
 
-            // Create the prompt for OpenAI
+            // Store the source context for transparency
+            this.sourceContext = {
+                githubUser: userData,
+                githubRepos: topRepos,
+                resumeTexts: resumeTexts
+            };
+
+            // Create the prompt for OpenAI with anti-plagiarism instructions
             const prompt = `
                 Generate a comprehensive professional profile based on the following data:
+
+                GitHub User:
+                ${JSON.stringify(userData, null, 2)}
 
                 GitHub Repositories:
                 ${JSON.stringify(topRepos, null, 2)}
@@ -74,14 +93,21 @@ class ProfileGenerator {
                 Resume Information:
                 ${combinedResumeText}
 
+                IMPORTANT INSTRUCTION:
+                - DO NOT copy phrases or sentences directly from the resume.
+                - COMPLETELY REWRITE all information in your own words.
+                - DO NOT use any unique phrasing, unusual word choices, or distinctive sentence structures from the resumes.
+                - Maintain factual accuracy while ensuring the content is 100% original.
+                - For technical terms, skills, languages, and tool names, those can be listed as-is.
+
                 Please provide a JSON response in the following format:
                 {
                     "name": "Full Name",
                     "title": "Professional Title",
-                    "summary": "A concise professional summary (2-3 paragraphs)",
+                    "summary": "A concise professional summary (2-3 paragraphs) in original phrasing",
                     "skills": ["skill1", "skill2", ...],
                     "experience": [
-                        {"position": "Title", "company": "Company Name", "period": "Date Range", "description": "Description"},
+                        {"position": "Title", "company": "Company Name", "period": "Date Range", "description": "Description in original wording"},
                         ...
                     ],
                     "education": [
@@ -89,7 +115,7 @@ class ProfileGenerator {
                         ...
                     ],
                     "projects": [
-                        {"name": "Project Name", "description": "Description", "technologies": ["tech1", "tech2"]},
+                        {"name": "Project Name", "description": "Description in original phrasing", "technologies": ["tech1", "tech2"]},
                         ...
                     ],
                     "interests": ["interest1", "interest2", ...],
@@ -264,9 +290,147 @@ class ProfileGenerator {
                 '<li>No recommendations available.</li>'}
                 </ul>
             </section>
+
+            <section class="profile-section">
+                <h3>View Source Context</h3>
+                <p>See what data was used to generate this profile:</p>
+                <button id="view-source-context" class="btn secondary">View Source Data</button>
+            </section>
         `;
 
         element.innerHTML = html;
+
+        // Add event listener for the source context button
+        document.getElementById('view-source-context').addEventListener('click', () => {
+            this.showSourceContextModal();
+        });
+    }
+
+    // Show modal with the source context data
+    showSourceContextModal() {
+        if (!this.sourceContext) {
+            alert('Source context is not available');
+            return;
+        }
+
+        // Create modal if it doesn't exist
+        let modal = document.getElementById('source-context-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'source-context-modal';
+            modal.className = 'modal';
+            modal.setAttribute('role', 'dialog');
+            modal.setAttribute('aria-modal', 'true');
+            modal.setAttribute('aria-labelledby', 'source-context-title');
+
+            document.body.appendChild(modal);
+        }
+
+        // Style the modal similar to the existing analysis modal
+        modal.style.display = 'flex';
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        modal.style.justifyContent = 'center';
+        modal.style.alignItems = 'center';
+        modal.style.zIndex = '2000';
+        modal.style.padding = 'var(--space-md)';
+        modal.style.opacity = '1';
+        modal.style.transition = 'opacity var(--transition-base)';
+
+        // Create the modal content
+        modal.innerHTML = `
+            <div id="source-context-content" style="
+                background: var(--glass-bg-light);
+                backdrop-filter: blur(20px);
+                border: 1px solid var(--border-light);
+                padding: var(--space-xl);
+                width: 100%;
+                max-width: 900px;
+                max-height: 90vh;
+                overflow-y: auto;
+                border-radius: var(--border-radius);
+                box-shadow: var(--glass-shadow);
+                position: relative;
+            ">
+                <h2 id="source-context-title">Source Context Data</h2>
+                <button id="close-source-modal" style="
+                    position: absolute;
+                    top: var(--space-md);
+                    right: var(--space-md);
+                    background: none;
+                    font-size: var(--font-size-lg);
+                    border: none;
+                    cursor: pointer;
+                    color: var(--text-secondary-light);
+                ">×</button>
+
+                <h3>GitHub User Information</h3>
+                <pre style="
+                    white-space: pre-wrap;
+                    background: var(--glass-bg-light);
+                    padding: var(--space-md);
+                    border: 1px solid var(--border-light);
+                    border-radius: var(--border-radius);
+                    font-family: monospace;
+                    font-size: var(--font-size-sm);
+                    max-height: 200px;
+                    overflow-y: auto;
+                ">${JSON.stringify(this.sourceContext.githubUser, null, 2)}</pre>
+
+                <h3>GitHub Repositories</h3>
+                <pre style="
+                    white-space: pre-wrap;
+                    background: var(--glass-bg-light);
+                    padding: var(--space-md);
+                    border: 1px solid var(--border-light);
+                    border-radius: var(--border-radius);
+                    font-family: monospace;
+                    font-size: var(--font-size-sm);
+                    max-height: 200px;
+                    overflow-y: auto;
+                ">${JSON.stringify(this.sourceContext.githubRepos, null, 2)}</pre>
+
+                <h3>Resume Texts</h3>
+                ${this.sourceContext.resumeTexts.map((text, index) => `
+                    <h4>Resume ${index + 1}</h4>
+                    <pre style="
+                        white-space: pre-wrap;
+                        background: var(--glass-bg-light);
+                        padding: var(--space-md);
+                        border: 1px solid var(--border-light);
+                        border-radius: var(--border-radius);
+                        font-family: monospace;
+                        font-size: var(--font-size-sm);
+                        max-height: 300px;
+                        overflow-y: auto;
+                    ">${text}</pre>
+                `).join('')}
+
+                <div style="margin-top: var(--space-lg);">
+                    <p style="font-size: var(--font-size-sm); color: var(--text-secondary-light);">
+                        This is the raw data used to generate your profile.
+                        The AI has been instructed not to plagiarize this content
+                        but to generate a completely original profile based on the information provided.
+                    </p>
+                </div>
+            </div>
+        `;
+
+        // Add event listener for the close button
+        document.getElementById('close-source-modal').addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        // Close modal if user clicks outside the content
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
     }
 }
 

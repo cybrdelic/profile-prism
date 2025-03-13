@@ -746,6 +746,106 @@
                 gap: var(--space-md);
             }
         }
+
+        /* Source Context Modal Styles */
+        #source-context-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: var(--space-md);
+            opacity: 0;
+            transition: opacity var(--transition-base);
+        }
+
+        #source-context-modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        #source-context-content {
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-light);
+            padding: var(--space-xl);
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: var(--border-radius);
+            box-shadow: var(--glass-shadow);
+            position: relative;
+            transform: scale(0.95);
+            transition: transform var(--transition-base);
+        }
+
+        #source-context-modal.active #source-context-content {
+            transform: scale(1);
+        }
+
+        #close-source-modal {
+            position: absolute;
+            top: var(--space-md);
+            right: var(--space-md);
+            background: none;
+            font-size: var(--font-size-lg);
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary-light);
+            transition: all var(--transition-base);
+        }
+
+        #close-source-modal:hover {
+            color: var(--accent-blue);
+        }
+
+        #close-source-modal:focus {
+            outline: none;
+            color: var(--accent-blue);
+        }
+
+        .resume-content {
+            white-space: pre-wrap;
+            background: var(--glass-bg-light);
+            padding: var(--space-md);
+            border: 1px solid var(--border-light);
+            border-radius: var(--border-radius);
+            font-family: monospace;
+            font-size: var(--font-size-sm);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .code-display {
+            white-space: pre-wrap;
+            background: var(--glass-bg-light);
+            padding: var(--space-md);
+            border: 1px solid var(--border-light);
+            border-radius: var(--border-radius);
+            font-family: monospace;
+            font-size: var(--font-size-sm);
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        #view-source-context {
+            margin-top: var(--space-md);
+        }
+
+        /* Add responsive styles for the source context modal */
+        @media (max-width: 768px) {
+            #source-context-content {
+                width: 95%;
+                padding: var(--space-lg);
+                max-height: 85vh;
+            }
+        }
     </style>
 </head>
 

@@ -1,0 +1,1622 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProfilePrism</title>
+    <!-- PDF.js for rendering and extracting text from PDFs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <!-- Marked library for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Profile Generator script -->
+    <script src="/profile-generator.js"></script>
+    <style>
+        :root {
+            /* Color Palette */
+            --white: #FFFFFF;
+            --light-bg: #F5F5F7;
+            --dark-bg: #1C1C1E;
+            --text-primary-light: #1D1D1F;
+            --text-primary-dark: #F5F5F7;
+            --text-secondary-light: #6E6E73;
+            --text-secondary-dark: #A1A1A6;
+            --accent-blue: #0071E3;
+            --accent-blue-hover: #0A84FF;
+            --accent-green: #34C759;
+            --github-dark: #24292e;
+            --github-dark-hover: #333;
+            --glass-bg-light: rgba(255, 255, 255, 0.7);
+            --glass-bg-dark: rgba(28, 28, 30, 0.7);
+            --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --border-light: rgba(0, 0, 0, 0.1);
+            --border-dark: rgba(255, 255, 255, 0.1);
+
+            /* Typography */
+            --font-primary: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+            --font-size-sm: 0.875rem;
+            --font-size-base: 1rem;
+            --font-size-md: 1.125rem;
+            --font-size-lg: 1.5rem;
+            --font-size-xl: 2rem;
+            --line-height-base: 1.6;
+
+            /* Spacing */
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --space-2xl: 48px;
+
+            /* Layout */
+            --header-height: 56px;
+            --border-radius: 16px;
+            --border-radius-sm: 8px;
+
+            /* Transitions */
+            --transition-base: 0.3s ease;
+            --transition-fast: 0.15s ease;
+        }
+
+        [data-theme="dark"] {
+            --white: #1C1C1E;
+            --light-bg: #1C1C1E;
+            --dark-bg: #F5F5F7;
+            --text-primary-light: #F5F5F7;
+            --text-primary-dark: #1D1D1F;
+            --text-secondary-light: #A1A1A6;
+            --text-secondary-dark: #6E6E73;
+            --glass-bg-light: rgba(28, 28, 30, 0.7);
+            --glass-bg-dark: rgba(255, 255, 255, 0.7);
+            background-color: var(--light-bg);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: var(--font-primary);
+            font-size: var(--font-size-base);
+            line-height: var(--line-height-base);
+            color: var(--text-primary-light);
+            background-color: var(--light-bg);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            font-weight: 400;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        main {
+            padding: var(--space-lg) var(--space-md);
+            padding-top: calc(var(--header-height) + var(--space-lg));
+            max-width: 1280px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        h2,
+        h3 {
+            font-family: var(--font-primary);
+            font-weight: 600;
+            color: var(--text-primary-light);
+        }
+
+        h2 {
+            font-size: var(--font-size-xl);
+            margin-bottom: var(--space-xl);
+        }
+
+        h3 {
+            font-size: var(--font-size-lg);
+            margin-bottom: var(--space-lg);
+        }
+
+        p {
+            font-size: var(--font-size-base);
+            color: var(--text-secondary-light);
+            margin-bottom: var(--space-md);
+        }
+
+        a {
+            color: var(--accent-blue);
+            text-decoration: none;
+            transition: color var(--transition-base);
+        }
+
+        a:hover {
+            color: var(--accent-blue-hover);
+        }
+
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: var(--header-height);
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-light);
+            padding: 0 var(--space-lg);
+            z-index: 1000;
+        }
+
+        .nav-right {
+            display: flex;
+            gap: var(--space-md);
+            align-items: center;
+        }
+
+        .home-link {
+            text-decoration: none;
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            padding: 0 var(--space-md);
+            transition: background var(--transition-base);
+            border-radius: var(--border-radius-sm);
+        }
+
+        .home-link:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .logo {
+            font-family: var(--font-primary);
+            font-size: var(--font-size-md);
+            font-weight: 600;
+            color: var(--text-primary-light);
+        }
+
+        .theme-toggle,
+        .github-connect {
+            background: var(--glass-bg-light);
+            border: 1px solid var(--border-light);
+            border-radius: 9999px;
+            padding: var(--space-sm);
+            cursor: pointer;
+            font-size: var(--font-size-base);
+            color: var(--text-primary-light);
+            transition: all var(--transition-base);
+            position: relative;
+        }
+
+        .theme-toggle:hover,
+        .github-connect:hover {
+            background: rgba(0, 0, 0, 0.05);
+            transform: scale(1.05);
+        }
+
+        .theme-toggle:focus,
+        .github-connect:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.3);
+        }
+
+        .github-connect {
+            background: var(--github-dark);
+            color: var(--white);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .github-connect:hover {
+            background: var(--github-dark-hover);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-lg);
+        }
+
+        #drop-area {
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-light);
+            padding: var(--space-2xl);
+            text-align: center;
+            margin-bottom: var(--space-lg);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            border-radius: var(--border-radius);
+            width: 100%;
+            position: relative;
+            box-shadow: var(--glass-shadow);
+        }
+
+        #drop-area:hover,
+        #drop-area.drag-active {
+            background: rgba(0, 0, 0, 0.05);
+            border-color: var(--accent-blue);
+        }
+
+        #drop-area p {
+            font-size: var(--font-size-md);
+            font-weight: 400;
+            color: var(--text-secondary-light);
+        }
+
+        #progress {
+            margin-top: var(--space-sm);
+            font-size: var(--font-size-base);
+            font-weight: 400;
+            color: var(--text-secondary-light);
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+        }
+
+        #progress.loading::after {
+            content: '';
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--text-secondary-light);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #artifact-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: var(--space-lg);
+            width: 100%;
+        }
+
+        .artifact-card {
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-light);
+            border-radius: var(--border-radius);
+            padding: var(--space-lg);
+            box-shadow: var(--glass-shadow);
+            transition: all var(--transition-base);
+            width: 100%;
+            position: relative;
+        }
+
+        .artifact-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+            border-color: var(--accent-blue);
+        }
+
+        .artifact-card h3 {
+            font-family: var(--font-primary);
+            font-size: var(--font-size-md);
+            font-weight: 600;
+            color: var(--text-primary-light);
+            margin-bottom: var(--space-sm);
+            word-break: break-word;
+        }
+
+        .artifact-card p {
+            font-size: var(--font-size-sm);
+            font-weight: 400;
+            color: var(--text-secondary-light);
+            margin: var(--space-sm) 0;
+        }
+
+        .actions {
+            margin-top: var(--space-md);
+            display: flex;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: var(--space-sm) var(--space-lg);
+            border: none;
+            border-radius: var(--border-radius-sm);
+            background: var(--accent-blue);
+            color: var(--white);
+            font-family: var(--font-primary);
+            font-size: var(--font-size-base);
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:hover {
+            background: var(--accent-blue-hover);
+            transform: scale(1.03);
+            box-shadow: 0 5px 15px rgba(0, 113, 227, 0.3);
+        }
+
+        .btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.3);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn.loading {
+            background: var(--accent-blue-hover);
+            cursor: not-allowed;
+            position: relative;
+        }
+
+        .btn.loading::after {
+            content: '';
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--white);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: var(--space-sm);
+        }
+
+        .btn::before {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--text-primary-light);
+            color: var(--white);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: var(--font-size-sm);
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity var(--transition-fast), visibility var(--transition-fast);
+            pointer-events: none;
+        }
+
+        .btn:hover::before {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .btn.primary {
+            background: var(--accent-blue);
+        }
+
+        .btn.secondary {
+            background: transparent;
+            border: 1px solid var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .btn.secondary:hover {
+            background: rgba(0, 113, 227, 0.1);
+        }
+
+        #analysis-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: var(--space-md);
+            opacity: 0;
+            transition: opacity var(--transition-base);
+        }
+
+        #analysis-modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        #analysis-content {
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-light);
+            padding: var(--space-xl);
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: var(--border-radius);
+            box-shadow: var(--glass-shadow);
+            position: relative;
+            transform: scale(0.95);
+            transition: transform var(--transition-base);
+        }
+
+        #analysis-modal.active #analysis-content {
+            transform: scale(1);
+        }
+
+        #close-modal {
+            position: absolute;
+            top: var(--space-md);
+            right: var(--space-md);
+            background: none;
+            font-size: var(--font-size-lg);
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary-light);
+            transition: all var(--transition-base);
+        }
+
+        #close-modal:hover {
+            color: var(--accent-blue);
+        }
+
+        #close-modal:focus {
+            outline: none;
+            color: var(--accent-blue);
+        }
+
+        #resume-render,
+        #extracted-text,
+        #keywords,
+        #insights {
+            margin-bottom: var(--space-2xl);
+            width: 100%;
+        }
+
+        #resume-render canvas,
+        #resume-render img {
+            max-width: 100%;
+            width: 100%;
+            border: 1px solid var(--border-light);
+            border-radius: var(--border-radius);
+        }
+
+        #extracted-text {
+            white-space: pre-wrap;
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(20px);
+            padding: var(--space-md);
+            border: 1px solid var(--border-light);
+            border-radius: var(--border-radius);
+            font-family: var(--font-primary);
+            font-size: var(--font-size-sm);
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .highlight {
+            background-color: var(--accent-green);
+            color: var(--white);
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        #keywords {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-sm);
+        }
+
+        .keywords {
+            background: var(--accent-green);
+            color: var(--white);
+            padding: var(--space-sm) var(--space-md);
+            border-radius: 9999px;
+            font-size: var(--font-size-sm);
+            font-weight: 500;
+            text-transform: uppercase;
+            transition: transform var(--transition-base);
+        }
+
+        .keywords:hover {
+            transform: scale(1.05);
+        }
+
+        #insights {
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(20px);
+            padding: var(--space-lg);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-light);
+            box-shadow: var(--glass-shadow);
+        }
+
+        .insights-section {
+            margin-bottom: var(--space-lg);
+        }
+
+        .insights-section h4 {
+            font-family: var(--font-primary);
+            font-size: var(--font-size-md);
+            font-weight: 600;
+            color: var(--text-primary-light);
+            margin-bottom: var(--space-md);
+        }
+
+        .insights-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .insights-section li {
+            font-family: var(--font-primary);
+            font-size: var(--font-size-base);
+            font-weight: 400;
+            color: var(--text-secondary-light);
+            margin-bottom: var(--space-sm);
+            padding-left: var(--space-md);
+            position: relative;
+        }
+
+        .insights-section li::before {
+            content: '•';
+            color: var(--accent-blue);
+            position: absolute;
+            left: 0;
+        }
+
+        .feedback-btn {
+            background: none;
+            border: none;
+            font-size: var(--font-size-base);
+            cursor: pointer;
+            margin-left: var(--space-md);
+            color: var(--text-secondary-light);
+            transition: all var(--transition-base);
+        }
+
+        .feedback-btn:hover {
+            color: var(--accent-blue);
+        }
+
+        .feedback-btn:focus {
+            outline: none;
+            color: var(--accent-blue);
+        }
+
+        /* Profile section styles */
+        #profile-section {
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-light);
+            border-radius: var(--border-radius);
+            padding: var(--space-xl);
+            margin: var(--space-xl) 0;
+            box-shadow: var(--glass-shadow);
+            display: none;
+        }
+
+        .profile-header {
+            margin-bottom: var(--space-xl);
+            text-align: center;
+        }
+
+        .profile-header h2 {
+            font-size: var(--font-size-xl);
+            margin-bottom: var(--space-md);
+        }
+
+        .profile-header h3 {
+            font-size: var(--font-size-lg);
+            color: var(--text-secondary-light);
+            font-weight: 400;
+        }
+
+        .profile-section {
+            margin-bottom: var(--space-xl);
+            padding-bottom: var(--space-lg);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .profile-section:last-child {
+            border-bottom: none;
+        }
+
+        .profile-section h3 {
+            font-size: var(--font-size-lg);
+            margin-bottom: var(--space-md);
+            color: var(--text-primary-light);
+        }
+
+        .skills-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-sm);
+            margin-bottom: var(--space-md);
+        }
+
+        .skill-tag,
+        .tech-tag {
+            background: var(--accent-blue);
+            color: var(--white);
+            padding: var(--space-sm) var(--space-md);
+            border-radius: 9999px;
+            font-size: var(--font-size-sm);
+            font-weight: 500;
+            transition: transform var(--transition-base);
+        }
+
+        .tech-tag {
+            background: var(--accent-green);
+        }
+
+        .skill-tag:hover,
+        .tech-tag:hover {
+            transform: scale(1.05);
+        }
+
+        .experience-item,
+        .education-item,
+        .project-item {
+            margin-bottom: var(--space-lg);
+        }
+
+        .experience-item h4,
+        .education-item h4,
+        .project-item h4 {
+            font-size: var(--font-size-md);
+            margin-bottom: var(--space-sm);
+        }
+
+        .period {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary-light);
+            margin-bottom: var(--space-sm);
+            font-style: italic;
+        }
+
+        .technologies {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-sm);
+            margin-top: var(--space-sm);
+        }
+
+        #profile-controls {
+            display: flex;
+            gap: var(--space-md);
+            margin-top: var(--space-lg);
+        }
+
+        @media (max-width: 768px) {
+            main {
+                padding: var(--space-md);
+            }
+
+            #analysis-content {
+                width: 95%;
+                padding: var(--space-lg);
+                max-height: 85vh;
+            }
+
+            #artifact-list {
+                grid-template-columns: 1fr;
+            }
+
+            h2 {
+                font-size: var(--font-size-lg);
+            }
+
+            h3 {
+                font-size: var(--font-size-md);
+            }
+        }
+
+        @media (max-width: 480px) {
+            h2 {
+                font-size: var(--font-size-md);
+            }
+
+            .artifact-card h3 {
+                font-size: var(--font-size-base);
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .section-header {
+                flex-direction: column;
+                gap: var(--space-md);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="nav">
+        <div class="nav-left">
+            <a href="#" class="home-link">
+                <span class="logo">ProfilePrism</span>
+            </a>
+        </div>
+        <div class="nav-right">
+            <button class="github-connect" id="github-connect" aria-label="Connect with GitHub">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M12 2C6.48 2 2 6.48 2 12C2 16.42 4.87 20.17 8.84 21.5C9.34 21.58 9.5 21.27 9.5 21V19.31C6.73 19.91 6.14 17.97 6.14 17.97C5.68 16.81 5.03 16.5 5.03 16.5C4.12 15.88 5.1 15.9 5.1 15.9C6.1 15.97 6.63 16.93 6.63 16.93C7.5 18.45 8.97 18 9.54 17.76C9.63 17.11 9.89 16.67 10.17 16.42C7.95 16.17 5.62 15.31 5.62 11.5C5.62 10.39 6 9.5 6.65 8.79C6.55 8.54 6.2 7.5 6.75 6.15C6.75 6.15 7.59 5.88 9.5 7.17C10.29 6.95 11.15 6.84 12 6.84C12.85 6.84 13.71 6.95 14.5 7.17C16.41 5.88 17.25 6.15 17.25 6.15C17.8 7.5 17.45 8.54 17.35 8.79C18 9.5 18.38 10.39 18.38 11.5C18.38 15.32 16.04 16.16 13.81 16.41C14.17 16.72 14.5 17.33 14.5 18.26V21C14.5 21.27 14.66 21.59 15.17 21.5C19.14 20.16 22 16.42 22 12C22 6.48 17.52 2 12 2Z"
+                        fill="currentColor" />
+                </svg>
+                <span>GitHub</span>
+            </button>
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                <span class="toggle-icon">🌙</span>
+            </button>
+        </div>
+    </div>
+    <main>
+        <div class="section-header">
+            <h2>Profile Artifacts</h2>
+            <button id="generate-profile-btn" class="btn primary" disabled>Generate Complete Profile</button>
+        </div>
+        <div id="github-info" style="margin-bottom: var(--space-lg);"></div>
+        <div id="drop-area" aria-label="Drag and drop files here or click to upload">
+            <p>Drag and drop your PDF or image files here, or click to select.</p>
+            <input type="file" id="upload-input" accept=".pdf,image/*" style="display: none;"
+                aria-label="File upload input">
+        </div>
+        <div id="progress"></div>
+        <div id="artifact-list" aria-live="polite"></div>
+
+        <!-- New Profile Section -->
+        <div id="profile-section">
+            <div id="profile-content"></div>
+            <div id="profile-controls">
+                <button id="download-profile" class="btn secondary">Download Profile</button>
+                <button id="share-profile" class="btn secondary">Share Profile</button>
+            </div>
+        </div>
+    </main>
+
+    <div id="analysis-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div id="analysis-content">
+            <h2 id="modal-title">Resume Analysis</h2>
+            <button id="close-modal" aria-label="Close modal">×</button>
+            <div id="resume-render"></div>
+            <h3>Extracted Text</h3>
+            <div id="extracted-text"></div>
+            <h3>Key Skills</h3>
+            <div id="keywords"></div>
+            <h3>Insights</h3>
+            <div id="insights">
+                <p>Click "Get Insights" to analyze your resume.</p>
+            </div>
+            <div class="flex gap-md mt-md">
+                <button id="get-insights" class="btn primary-button" data-tooltip="Analyze with OpenAI"
+                    title="Click to analyze with OpenAI">Get Insights</button>
+                <span id="feedback" class="flex gap-sm">
+                    <button class="feedback-btn" aria-label="Thumbs up">👍</button>
+                    <button class="feedback-btn" aria-label="Thumbs down">👎</button>
+                </span>
+            </div>
+            <p class="mt-sm">Note: An OpenAI API key is required for insights. You'll be prompted if not set.</p>
+        </div>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
+
+        console.log('Starting script execution...');
+
+        // Initialize the Profile Generator
+        const profileGenerator = new ProfileGenerator();
+
+        // Check if user is logged in on page load and enable profile button if artifacts exist
+        document.addEventListener('DOMContentLoaded', async function () {
+            try {
+                const response = await fetch('/api/github/user');
+                if (response.ok) {
+                    const userData = await response.json();
+
+                    // Update UI for logged in user
+                    document.getElementById('github-info').innerHTML = `
+                        <p>Connected as <strong>${userData.login}</strong> (${userData.name || 'No name provided'})</p>
+                    `;
+
+                    document.getElementById('github-connect').innerHTML = `
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2C6.48 2 2 6.48 2 12C2 16.42 4.87 20.17 8.84 21.5C9.34 21.58 9.5 21.27 9.5 21V19.31C6.73 19.91 6.14 17.97 6.14 17.97C5.68 16.81 5.03 16.5 5.03 16.5C4.12 15.88 5.1 15.9 5.1 15.9C6.1 15.97 6.63 16.93 6.63 16.93C7.5 18.45 8.97 18 9.54 17.76C9.63 17.11 9.89 16.67 10.17 16.42C7.95 16.17 5.62 15.31 5.62 11.5C5.62 10.39 6 9.5 6.65 8.79C6.55 8.54 6.2 7.5 6.75 6.15C6.75 6.15 7.59 5.88 9.5 7.17C10.29 6.95 11.15 6.84 12 6.84C12.85 6.84 13.71 6.95 14.5 7.17C16.41 5.88 17.25 6.15 17.25 6.15C17.8 7.5 17.45 8.54 17.35 8.79C18 9.5 18.38 10.39 18.38 11.5C18.38 15.32 16.04 16.16 13.81 16.41C14.17 16.72 14.5 17.33 14.5 18.26V21C14.5 21.27 14.66 21.59 15.17 21.5C19.14 20.16 22 16.42 22 12C22 6.48 17.52 2 12 2Z" fill="currentColor" />
+                        </svg>
+                        <span>${userData.login}</span>
+                    `;
+
+                    // Try to fetch GitHub data for later use
+                    profileGenerator.fetchGitHubData().catch(error => {
+                        console.error('Error pre-fetching GitHub data:', error);
+                    });
+
+                    // Check if we have any artifacts, and if so, enable the generate profile button
+                    const artifacts = loadArtifacts();
+                    if (artifacts.length > 0) {
+                        document.getElementById('generate-profile-btn').disabled = false;
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking auth status:', error);
+            }
+
+            renderArtifactList();
+        });
+
+        // GitHub connect button handler
+        document.getElementById('github-connect').addEventListener('click', async () => {
+            try {
+                // Check if already logged in
+                const response = await fetch('/api/github/user');
+                if (response.ok) {
+                    // User is logged in, handle logout
+                    window.location.href = '/auth/logout';
+                } else {
+                    // User is not logged in, handle login
+                    window.location.href = '/auth/github';
+                }
+            } catch (error) {
+                // Error checking status, assume not logged in
+                window.location.href = '/auth/github';
+            }
+        });
+
+        // Generate profile button handler
+        document.getElementById('generate-profile-btn').addEventListener('click', async () => {
+            const generateBtn = document.getElementById('generate-profile-btn');
+
+            try {
+                // Check if user is logged in
+                const userResponse = await fetch('/api/github/user');
+                if (!userResponse.ok) {
+                    alert('Please connect with GitHub first to generate your profile.');
+                    return;
+                }
+
+                // Check if we have any artifacts
+                const artifacts = loadArtifacts();
+                if (artifacts.length === 0) {
+                    alert('Please upload at least one resume or document first.');
+                    return;
+                }
+
+                // Disable the button and show loading state
+                generateBtn.disabled = true;
+                generateBtn.classList.add('loading');
+                generateBtn.textContent = 'Generating...';
+
+                // Get the GitHub data
+                await profileGenerator.fetchGitHubData();
+
+                // Set the resume data
+                profileGenerator.setResumeData(artifacts);
+
+                // Get the OpenAI API key
+                let apiKey = sessionStorage.getItem('openai_api_key');
+                if (!apiKey) {
+                    apiKey = prompt('Please enter your OpenAI API key to generate your profile:');
+                    if (!apiKey) {
+                        throw new Error('API key is required for profile generation.');
+                    }
+                    sessionStorage.setItem('openai_api_key', apiKey);
+                }
+
+                // Generate the profile
+                const profileData = await profileGenerator.generateProfile(apiKey);
+
+                // Render the profile
+                const profileContent = document.getElementById('profile-content');
+                profileGenerator.renderProfile(profileContent);
+
+                // Show the profile section
+                document.getElementById('profile-section').style.display = 'block';
+
+                // Scroll to the profile section
+                document.getElementById('profile-section').scrollIntoView({ behavior: 'smooth' });
+
+            } catch (error) {
+                console.error('Error generating profile:', error);
+                alert(`Failed to generate profile: ${error.message}`);
+            } finally {
+                // Reset button state
+                generateBtn.disabled = false;
+                generateBtn.classList.remove('loading');
+                generateBtn.textContent = 'Generate Complete Profile';
+            }
+        });
+
+        // Download profile button handler
+        document.getElementById('download-profile').addEventListener('click', () => {
+            if (!profileGenerator.profileData) {
+                alert('Please generate a profile first.');
+                return;
+            }
+
+            // Create an HTML version of the profile
+            const profile = profileGenerator.profileData;
+            const html = `
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>${profile.name} - Professional Profile</title>
+                    <style>
+                        body {
+                            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+                            line-height: 1.6;
+                            color: #333;
+                            max-width: 800px;
+                            margin: 0 auto;
+                            padding: 20px;
+                        }
+                        h1, h2, h3 {
+                            color: #0071E3;
+                        }
+                        h1 {
+                            text-align: center;
+                            font-size: 32px;
+                            margin-bottom: 10px;
+                        }
+                        h2 {
+                            text-align: center;
+                            font-size: 24px;
+                            font-weight: 400;
+                            margin-top: 0;
+                            color: #6E6E73;
+                        }
+                        h3 {
+                            font-size: 20px;
+                            margin-top: 30px;
+                            padding-bottom: 10px;
+                            border-bottom: 1px solid #eee;
+                        }
+                        section {
+                            margin: 20px 0;
+                        }
+                        .skills {
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 8px;
+                            margin: 10px 0;
+                        }
+                        .skill {
+                            background: #0071E3;
+                            color: white;
+                            padding: 5px 12px;
+                            border-radius: 20px;
+                            font-size: 14px;
+                        }
+                        .tech {
+                            background: #34C759;
+                            color: white;
+                            padding: 5px 12px;
+                            border-radius: 20px;
+                            font-size: 14px;
+                        }
+                        .footer {
+                            text-align: center;
+                            margin-top: 50px;
+                            font-size: 14px;
+                            color: #6E6E73;
+                        }
+                        .period {
+                            font-style: italic;
+                            color: #6E6E73;
+                            font-size: 14px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <header>
+                        <h1>${profile.name || 'Professional Profile'}</h1>
+                        <h2>${profile.title || ''}</h2>
+                    </header>
+
+                    <section>
+                        <h3>Summary</h3>
+                        <p>${profile.summary || 'No summary available.'}</p>
+                    </section>
+
+                    <section>
+                        <h3>Skills</h3>
+                        <div class="skills">
+                            ${profile.skills && profile.skills.length ?
+                    profile.skills.map(skill => `<span class="skill">${skill}</span>`).join('') :
+                    'No skills listed.'}
+                        </div>
+                    </section>
+
+                    <section>
+                        <h3>Experience</h3>
+                        ${profile.experience && profile.experience.length ?
+                    profile.experience.map(exp => `
+                                <div>
+                                    <h4>${exp.position} at ${exp.company}</h4>
+                                    <p class="period">${exp.period || 'Date not specified'}</p>
+                                    <p>${exp.description || 'No description available.'}</p>
+                                </div>
+                            `).join('') :
+                    '<p>No experience listed.</p>'}
+                    </section>
+
+                    <section>
+                        <h3>Education</h3>
+                        ${profile.education && profile.education.length ?
+                    profile.education.map(edu => `
+                                <div>
+                                    <h4>${edu.degree}</h4>
+                                    <p>${edu.institution} (${edu.period || 'Date not specified'})</p>
+                                </div>
+                            `).join('') :
+                    '<p>No education listed.</p>'}
+                    </section>
+
+                    <section>
+                        <h3>Projects</h3>
+                        ${profile.projects && profile.projects.length ?
+                    profile.projects.map(proj => `
+                                <div>
+                                    <h4>${proj.name}</h4>
+                                    <p>${proj.description || 'No description available.'}</p>
+                                    <div class="skills">
+                                        ${proj.technologies && proj.technologies.length ?
+                            proj.technologies.map(tech => `<span class="tech">${tech}</span>`).join('') :
+                            ''}
+                                    </div>
+                                </div>
+                            `).join('') :
+                    '<p>No projects listed.</p>'}
+                    </section>
+
+                    <section>
+                        <h3>Interests</h3>
+                        <p>${profile.interests && profile.interests.length ?
+                    profile.interests.join(', ') :
+                    'No interests listed.'}</p>
+                    </section>
+
+                    <div class="footer">
+                        <p>Generated with ProfilePrism</p>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            // Create a Blob with the HTML content
+            const blob = new Blob([html], { type: 'text/html' });
+
+            // Create a download link
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${profile.name.replace(/\s+/g, '_')}_profile.html`;
+
+            // Trigger the download
+            link.click();
+        });
+
+        // Share profile button handler
+        document.getElementById('share-profile').addEventListener('click', () => {
+            if (!profileGenerator.profileData) {
+                alert('Please generate a profile first.');
+                return;
+            }
+
+            // Create a simplified version of the profile for sharing
+            const profile = profileGenerator.profileData;
+            const shareText = `
+${profile.name} - ${profile.title}
+
+${profile.summary}
+
+Skills: ${profile.skills.join(', ')}
+
+Generated with ProfilePrism
+            `.trim();
+
+            // Create a temporary textarea to copy the text
+            const textarea = document.createElement('textarea');
+            textarea.value = shareText;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            alert('Profile copied to clipboard! You can now paste it wherever you want to share it.');
+        });
+
+        function loadTesseract() {
+            console.log('Loading Tesseract.js...');
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@2.1.4/dist/tesseract.min.js';
+                script.onload = () => {
+                    console.log('Tesseract.js loaded successfully');
+                    resolve();
+                };
+                script.onerror = (error) => {
+                    console.error('Failed to load Tesseract.js:', error);
+                    reject(error);
+                };
+                document.head.appendChild(script);
+            });
+        }
+
+        function loadArtifacts() {
+            try {
+                const artifacts = JSON.parse(localStorage.getItem('artifacts') || '[]');
+                console.log('Loaded artifacts:', artifacts);
+                return artifacts;
+            } catch (error) {
+                console.error('Error loading artifacts from localStorage:', error);
+                return [];
+            }
+        }
+
+        function saveArtifacts(artifacts) {
+            try {
+                localStorage.setItem('artifacts', JSON.stringify(artifacts));
+                console.log('Saved artifacts:', artifacts);
+
+                // Enable the generate profile button if there are artifacts and the user is logged in
+                if (artifacts.length > 0) {
+                    fetch('/api/github/user').then(response => {
+                        if (response.ok) {
+                            document.getElementById('generate-profile-btn').disabled = false;
+                        }
+                    }).catch(error => {
+                        console.error('Error checking auth status:', error);
+                    });
+                } else {
+                    document.getElementById('generate-profile-btn').disabled = true;
+                }
+            } catch (error) {
+                console.error('Error saving artifacts to localStorage:', error);
+            }
+        }
+
+        function renderArtifactList() {
+            console.log('Rendering artifact list...');
+            const artifacts = loadArtifacts();
+            const listElement = document.getElementById('artifact-list');
+            if (!listElement) return;
+            listElement.innerHTML = '';
+            if (artifacts.length === 0) {
+                listElement.innerHTML = '<p>No artifacts uploaded yet.</p>';
+                return;
+            }
+            artifacts.forEach((artifact) => {
+                const card = document.createElement('div');
+                card.className = 'artifact-card';
+                const isAnalyzable = artifact.type === 'application/pdf' || artifact.type.startsWith('image/');
+                const analyzeButton = isAnalyzable ?
+                    `<button class="btn analyze-btn" data-id="${artifact.id}" data-tooltip="Analyze this artifact">Analyze</button>` : '';
+                card.innerHTML = `
+                    <h3>${artifact.name}</h3>
+                    <p>Type: ${artifact.type}</p>
+                    <p>Size: ${(artifact.size / 1024).toFixed(2)} KB</p>
+                    <div class="actions">
+                        <button class="btn download-btn" data-id="${artifact.id}" data-tooltip="Download this artifact">Download</button>
+                        <button class="btn delete-btn" data-id="${artifact.id}" data-tooltip="Delete this artifact">Delete</button>
+                        ${analyzeButton}
+                    </div>
+                `;
+                listElement.appendChild(card);
+            });
+
+            document.querySelectorAll('.download-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const artifact = getArtifactById(this.dataset.id);
+                    if (artifact) {
+                        const link = document.createElement('a');
+                        link.href = artifact.content;
+                        link.download = artifact.name;
+                        link.click();
+                    }
+                });
+            });
+
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    deleteArtifact(this.dataset.id);
+                });
+            });
+
+            document.querySelectorAll('.analyze-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    showAnalysisModal(this.dataset.id).catch(error => {
+                        console.error('Error in showAnalysisModal:', error);
+                        alert('Failed to analyze artifact. Check console for details.');
+                    });
+                });
+            });
+        }
+
+        function getArtifactById(id) {
+            return loadArtifacts().find(a => a.id == id);
+        }
+
+        function deleteArtifact(id) {
+            let artifacts = loadArtifacts();
+            artifacts = artifacts.filter(a => a.id != id);
+            saveArtifacts(artifacts);
+            renderArtifactList();
+        }
+
+        async function handleFileUpload(file) {
+            if (!file) {
+                alert('Please select a file to upload.');
+                return;
+            }
+            if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
+                const progress = document.getElementById('progress');
+                progress.textContent = 'Uploading...';
+                progress.classList.add('loading');
+                const reader = new FileReader();
+                reader.onload = async function (e) {
+                    const base64 = e.target.result;
+                    const artifact = {
+                        id: Date.now(),
+                        name: file.name,
+                        type: file.type,
+                        size: file.size,
+                        content: base64
+                    };
+                    const artifacts = loadArtifacts();
+                    artifacts.push(artifact);
+                    saveArtifacts(artifacts);
+                    renderArtifactList();
+                    progress.textContent = 'Upload complete!';
+                    progress.classList.remove('loading');
+                    await showAnalysisModal(artifact.id);
+                };
+                reader.onerror = () => {
+                    progress.textContent = 'Upload failed.';
+                    progress.classList.remove('loading');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                alert('Please upload a PDF or image file.');
+            }
+        }
+
+        const dropArea = document.getElementById('drop-area');
+        if (dropArea) {
+            dropArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropArea.classList.add('drag-active');
+            });
+            dropArea.addEventListener('dragleave', () => {
+                dropArea.classList.remove('drag-active');
+            });
+            dropArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropArea.classList.remove('drag-active');
+                handleFileUpload(e.dataTransfer.files[0]);
+            });
+            dropArea.addEventListener('click', () => {
+                document.getElementById('upload-input').click();
+            });
+        }
+
+        const uploadInput = document.getElementById('upload-input');
+        if (uploadInput) {
+            uploadInput.addEventListener('change', (e) => {
+                handleFileUpload(e.target.files[0]);
+                e.target.value = '';
+            });
+        }
+
+        let apiKey = sessionStorage.getItem('openai_api_key') || null;
+
+        function displayInsights(insights) {
+            const insightsElement = document.getElementById('insights');
+            if (!insightsElement) return;
+
+            let cleanedInsights = insights.replace(/```json/g, '').replace(/```/g, '').trim();
+
+            try {
+                const data = JSON.parse(cleanedInsights);
+                insightsElement.innerHTML = `
+                    <div class="insights-section">
+                        <h4>Strengths</h4>
+                        <ul>${data.strengths.length ? data.strengths.map(s => `<li>${s}</li>`).join('') : '<li>No strengths identified.</li>'}</ul>
+                    </div>
+                    <div class="insights-section">
+                        <h4>Weaknesses</h4>
+                        <ul>${data.weaknesses.length ? data.weaknesses.map(w => `<li>${w}</li>`).join('') : '<li>No weaknesses identified.</li>'}</ul>
+                    </div>
+                    <div class="insights-section">
+                        <h4>Suggestions</h4>
+                        <ul>${data.suggestions.length ? data.suggestions.map(s => `<li>${s}</li>`).join('') : '<li>No suggestions provided.</li>'}</ul>
+                    </div>
+                    <div class="insights-section">
+                        <h4>Comparison</h4>
+                        <ul>${data.comparison.length ? data.comparison.map(c => `<li>${c}</li>`).join('') : '<li>No comparison provided.</li>'}</ul>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error parsing insights:', error);
+                insightsElement.innerHTML = `
+                    <p>Error parsing insights. Raw response:</p>
+                    <pre style="background: var(--glass-bg-light); padding: var(--space-md); border-radius: var(--border-radius); border: 1px solid var(--border-light);">${insights}</pre>
+                `;
+            }
+        }
+
+        function extractMentionedSkills(insights) {
+            const skillWords = ['python', 'react', 'java', 'javascript', 'sql', 'node', 'leadership', 'teamwork', 'flask', 'selenium'];
+            try {
+                const data = JSON.parse(insights);
+                const allText = Object.values(data).flat().join(' ').toLowerCase();
+                return [...new Set(skillWords.filter(skill => allText.includes(skill.toLowerCase())))];
+            } catch {
+                return [];
+            }
+        }
+
+        function highlightTextInContext(text, skills) {
+            let highlighted = text;
+            skills.forEach(skill => {
+                const regex = new RegExp(`\\b(${skill})\\b`, 'gi');
+                highlighted = highlighted.replace(regex, `<span class="highlight">$1</span>`);
+            });
+            return highlighted;
+        }
+
+        async function annotatePDF(canvas, pdf, text, skills) {
+            try {
+                const context = canvas.getContext('2d');
+                const page = await pdf.getPage(1);
+                const textContent = await page.getTextContent();
+                const viewport = page.getViewport({ scale: 1.5 });
+
+                await page.render({ canvasContext: context, viewport }).promise;
+
+                textContent.items.forEach(item => {
+                    const str = item.str.toLowerCase();
+                    skills.forEach(skill => {
+                        if (str.includes(skill.toLowerCase())) {
+                            const transform = item.transform;
+                            const x = transform[4];
+                            const y = viewport.height - transform[5];
+                            const width = item.width;
+                            const height = item.height;
+                            context.fillStyle = 'rgba(52, 199, 89, 0.3)';
+                            context.fillRect(x, y - height, width, height);
+                        }
+                    });
+                });
+            } catch (error) {
+                console.error('Error annotating PDF:', error);
+            }
+        }
+
+        async function showAnalysisModal(artifactId) {
+            const artifact = getArtifactById(artifactId);
+            if (!artifact) {
+                document.getElementById('resume-render').innerHTML = '<p>Artifact not found.</p>';
+                return;
+            }
+
+            const modal = document.getElementById('analysis-modal');
+            modal.style.display = 'flex';
+            modal.classList.add('active');
+
+            const renderElement = document.getElementById('resume-render');
+            const extractedTextElement = document.getElementById('extracted-text');
+            const keywordsElement = document.getElementById('keywords');
+            const insightsElement = document.getElementById('insights');
+
+            renderElement.innerHTML = '';
+            extractedTextElement.innerHTML = '';
+            keywordsElement.innerHTML = '';
+            insightsElement.innerHTML = '<p>Click "Get Insights" to analyze your resume.</p>';
+
+            let pdf = null;
+            let canvas = null;
+            let text = '';
+
+            try {
+                if (artifact.type === 'application/pdf') {
+                    pdf = await renderPDF(artifact.content);
+                    canvas = renderElement.querySelector('canvas');
+                } else if (artifact.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.src = artifact.content;
+                    img.style.maxWidth = '100%';
+                    renderElement.appendChild(img);
+                }
+
+                if (artifact.type === 'application/pdf') {
+                    text = await extractTextFromPDF(artifact.content);
+                } else if (artifact.type.startsWith('image/')) {
+                    if (typeof Tesseract === 'undefined') {
+                        document.getElementById('progress').textContent = 'Loading OCR...';
+                        document.getElementById('progress').classList.add('loading');
+                        await loadTesseract();
+                        document.getElementById('progress').textContent = '';
+                        document.getElementById('progress').classList.remove('loading');
+                    }
+                    text = await performOCR(artifact.content);
+                }
+
+                extractedTextElement.innerHTML = text || '<p>No text extracted.</p>';
+                const keywords = extractKeywords(text);
+                keywordsElement.innerHTML = keywords.map(k => `<span class="keywords">${k}</span>`).join(' ') || '<p>No keywords found.</p>';
+            } catch (error) {
+                console.error('Error in showAnalysisModal:', error);
+                renderElement.innerHTML = '<p>Error loading resume.</p>';
+                modal.style.display = 'none';
+                modal.classList.remove('active');
+                return;
+            }
+
+            const getInsightsBtn = document.getElementById('get-insights');
+            if (getInsightsBtn) {
+                getInsightsBtn.onclick = async function () {
+                    if (!apiKey) {
+                        apiKey = prompt('Please enter your OpenAI API key:');
+                        if (!apiKey) {
+                            alert('API key is required for analysis.');
+                            return;
+                        }
+                        sessionStorage.setItem('openai_api_key', apiKey);
+                    }
+
+                    getInsightsBtn.classList.add('loading');
+                    getInsightsBtn.disabled = true;
+                    insightsElement.innerHTML = '<p>Analyzing...</p>';
+
+                    const insights = await getOpenAIInsights(text, apiKey);
+                    if (insights.startsWith('Error')) {
+                        insightsElement.innerHTML = `<p>${insights}</p>`;
+                    } else {
+                        displayInsights(insights);
+                        const mentionedSkills = extractMentionedSkills(insights);
+                        if (artifact.type === 'application/pdf' && canvas && pdf) {
+                            await annotatePDF(canvas, pdf, text, mentionedSkills);
+                        }
+                        const highlightedText = highlightTextInContext(text, mentionedSkills);
+                        extractedTextElement.innerHTML = highlightedText || '<p>No text to highlight.</p>';
+                    }
+
+                    getInsightsBtn.classList.remove('loading');
+                    getInsightsBtn.disabled = false;
+                };
+            }
+        }
+
+        async function renderPDF(base64) {
+            const pdfData = atob(base64.split(',')[1]);
+            const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+            const page = await pdf.getPage(1);
+            const scale = 1.5;
+            const viewport = page.getViewport({ scale });
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const context = canvas.getContext('2d');
+            await page.render({ canvasContext: context, viewport }).promise;
+            document.getElementById('resume-render').appendChild(canvas);
+            return pdf;
+        }
+
+        async function extractTextFromPDF(base64) {
+            const pdfData = atob(base64.split(',')[1]);
+            const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+            let text = '';
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const content = await page.getTextContent();
+                text += content.items.map(item => item.str).join(' ') + '\n';
+            }
+            return text;
+        }
+
+        async function performOCR(base64) {
+            try {
+                const { data: { text } } = await Tesseract.recognize(base64, 'eng');
+                return text;
+            } catch (error) {
+                console.error('Error performing OCR:', error);
+                return '';
+            }
+        }
+
+        async function getOpenAIInsights(text, apiKey) {
+            const prompt = `
+                Analyze this resume and provide insights in the following JSON format:
+                {
+                    "strengths": ["strength 1", "strength 2", ...],
+                    "weaknesses": ["weakness 1", "weakness 2", ...],
+                    "suggestions": ["suggestion 1", "suggestion 2", ...],
+                    "comparison": ["comparison point 1", "comparison point 2", ...]
+                }
+                Ensure all fields are arrays of strings, even if empty. Return the response as plain JSON without any Markdown formatting or code blocks (e.g., no \`\`\`json or \`\`\`). Here is the resume text:\n\n${text}
+            `;
+            try {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-4o',
+                        messages: [{ role: 'user', content: prompt }],
+                        max_tokens: 1000,
+                        temperature: 0.7
+                    })
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`API request failed: ${errorData.error.message}`);
+                }
+                const data = await response.json();
+                return data.choices[0].message.content.trim();
+            } catch (error) {
+                console.error('Error fetching OpenAI insights:', error);
+                return `Error: Unable to fetch insights. ${error.message}. Please check your API key and try again.`;
+            }
+        }
+
+        function extractKeywords(text) {
+            const skillWords = ['javascript', 'python', 'java', 'sql', 'react', 'node', 'leadership', 'teamwork', 'flask', 'selenium'];
+            const words = text.toLowerCase().split(/\s+/);
+            return [...new Set(words.filter(word => skillWords.includes(word)))];
+        }
+
+        const closeModalBtn = document.getElementById('close-modal');
+        if (closeModalBtn) {
+            closeModalBtn.addEventListener('click', () => {
+                const modal = document.getElementById('analysis-modal');
+                modal.style.display = 'none';
+                modal.classList.remove('active');
+                document.getElementById('progress').textContent = '';
+            });
+        }
+
+        document.querySelectorAll('.feedback-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                alert('Feedback recorded! Thanks!');
+            });
+        });
+
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                const newTheme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                document.body.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+            });
+        }
+
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.setAttribute('data-theme', 'dark');
+        }
+    </script>
+</body>
+
+</html>
